@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VLEO 이미지 프롬프트 생성기</title>
+
+  <style>
+    :root {
+      --green: #006241;
+      --green-accent: #00754A;
+      --green-house: #1E3932;
+      --green-uplift: #2b5148;
+      --green-light: #d4e9e2;
+      --cream: #f2f0eb;
+      --ceramic: #edebe9;
+      --white: #ffffff;
+      --neutral: #f9f9f9;
+      --text: rgba(0,0,0,.87);
+      --muted: rgba(0,0,0,.58);
+      --line: rgba(0,0,0,.12);
+      --danger: #c82014;
+      --gold: #cba258;
+      --radius: 12px;
+      --pill: 50px;
+      --shadow-card: 0 0 .5px rgba(0,0,0,.14), 0 1px 1px rgba(0,0,0,.24);
+      --shadow-nav: 0 1px 3px rgba(0,0,0,.10), 0 2px 2px rgba(0,0,0,.06), 0 0 2px rgba(0,0,0,.07);
+      --shadow-float: 0 0 6px rgba(0,0,0,.24), 0 8px 12px rgba(0,0,0,.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, Pretendard, "Noto Sans KR", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background: var(--cream);
+      letter-spacing: -0.01em;
+    }
+
+    .wrap {
+      width: min(1440px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 0 0 64px;
+    }
+
+    header {
+      margin: 0 -16px 32px;
+      padding: 56px max(24px, calc((100vw - 1440px) / 2 + 16px));
+      min-height: 250px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 28px;
+      background: var(--green-house);
+      color: white;
+      box-shadow: var(--shadow-nav);
+    }
+
+    .title-block {
+      max-width: 820px;
+    }
+
+    .title-block h1 {
+      margin: 0 0 14px;
+      font-size: clamp(34px, 5vw, 60px);
+      line-height: 1.08;
+      font-weight: 650;
+      letter-spacing: -0.035em;
+    }
+
+    .title-block p {
+      margin: 0;
+      max-width: 760px;
+      color: rgba(255,255,255,.74);
+      font-size: 17px;
+      line-height: 1.75;
+    }
+
+    .badge {
+      flex: 0 0 auto;
+      padding: 9px 16px;
+      border: 1px solid rgba(255,255,255,.72);
+      border-radius: var(--pill);
+      color: white;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .toolbar {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 24px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .toolbar-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .toolbar-row strong {
+      color: var(--green);
+      margin-right: 4px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    button, select, input, textarea {
+      font: inherit;
+      letter-spacing: -0.01em;
+    }
+
+    button, select {
+      min-height: 42px;
+      border-radius: var(--pill);
+      padding: 9px 16px;
+    }
+
+    select {
+      border: 1px solid rgba(0,0,0,.18);
+      background: var(--white);
+      color: var(--text);
+      outline: none;
+      cursor: pointer;
+    }
+
+    select:focus,
+    input:focus,
+    textarea:focus {
+      border-color: var(--green-accent) !important;
+      box-shadow: 0 0 0 3px rgba(0,117,74,.10);
+    }
+
+    button {
+      border: 1px solid rgba(0,0,0,.78);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 650;
+      transition: transform .2s ease, background .2s ease, border-color .2s ease, color .2s ease, box-shadow .2s ease;
+    }
+
+    button:hover {
+      background: rgba(0,0,0,.04);
+    }
+
+    button:active {
+      transform: scale(.95);
+    }
+
+    button.primary {
+      background: var(--green-accent);
+      color: white;
+      border-color: var(--green-accent);
+    }
+
+    button.primary:hover {
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    button.good {
+      background: white;
+      color: var(--green-accent);
+      border: 1.5px solid var(--green-accent);
+    }
+
+    button.good:hover {
+      background: rgba(0,117,74,.05);
+    }
+
+    button.danger {
+      color: var(--danger);
+      border-color: rgba(200,32,20,.55);
+      background: transparent;
+    }
+
+    button.danger:hover {
+      background: rgba(200,32,20,.05);
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(390px, .8fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      min-height: 74px;
+      padding: 18px 22px;
+      border-bottom: 1px solid rgba(0,0,0,.08);
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      background: var(--white);
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.35;
+      font-weight: 650;
+      color: var(--green);
+    }
+
+    .panel-body {
+      padding: 22px;
+    }
+
+    .sections {
+      display: grid;
+      gap: 14px;
+    }
+
+    details.section {
+      border: 0;
+      border-radius: var(--radius);
+      background: var(--neutral);
+      overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.055);
+      transition: background .2s ease;
+    }
+
+    details.section[open] {
+      background: var(--white);
+      box-shadow: inset 0 0 0 1px rgba(0,98,65,.18);
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 16px 18px;
+      list-style: none;
+      font-weight: 650;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      color: var(--text);
+      transition: color .2s ease, background .2s ease;
+    }
+
+    summary:hover {
+      color: var(--green);
+      background: rgba(212,233,226,.22);
+    }
+
+    summary::-webkit-details-marker { display: none; }
+
+    .section-count {
+      font-size: 12px;
+      line-height: 1;
+      color: var(--green);
+      border: 1px solid rgba(0,98,65,.28);
+      background: var(--green-light);
+      border-radius: var(--pill);
+      padding: 6px 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .groups {
+      padding: 0 16px 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .group {
+      border-top: 1px solid rgba(0,0,0,.07);
+      padding-top: 14px;
+    }
+
+    .group:first-child {
+      border-top: 0;
+      padding-top: 4px;
+    }
+
+    .group-title {
+      color: var(--green-uplift);
+      font-size: 13px;
+      margin-bottom: 10px;
+      font-weight: 750;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      position: relative;
+    }
+
+    .chip input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .chip span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 8px 12px;
+      border-radius: var(--pill);
+      border: 1px solid rgba(0,0,0,.16);
+      background: var(--white);
+      color: rgba(0,0,0,.72);
+      font-size: 13px;
+      cursor: pointer;
+      line-height: 1.35;
+      transition: .18s ease;
+    }
+
+    .chip span:hover {
+      border-color: var(--green-accent);
+      color: var(--green);
+      background: rgba(212,233,226,.24);
+    }
+
+    .chip input:checked + span {
+      background: var(--green-accent);
+      border-color: var(--green-accent);
+      color: white;
+      box-shadow: 0 2px 5px rgba(0,117,74,.16);
+    }
+
+    .sticky {
+      position: sticky;
+      top: 18px;
+      background: var(--green-house);
+      color: white;
+      box-shadow: var(--shadow-float);
+    }
+
+    .sticky .panel-head {
+      background: var(--green-house);
+      border-bottom-color: rgba(255,255,255,.14);
+    }
+
+    .sticky .panel-head h2 {
+      color: white;
+    }
+
+    .sticky .section-count {
+      color: white;
+      border-color: rgba(255,255,255,.35);
+      background: rgba(255,255,255,.10);
+    }
+
+    .sticky .panel-body {
+      background: var(--green-house);
+    }
+
+    .output-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field label,
+    .sticky .mini,
+    .custom-box label {
+      font-size: 12px;
+      color: rgba(255,255,255,.72);
+    }
+
+    .sticky select {
+      border-color: rgba(255,255,255,.24);
+      background: rgba(255,255,255,.96);
+      color: var(--text);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 470px;
+      resize: vertical;
+      border: 1px solid rgba(255,255,255,.20);
+      background: rgba(255,255,255,.97);
+      color: var(--text);
+      border-radius: var(--radius);
+      padding: 16px;
+      font: 13px/1.7 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      outline: none;
+    }
+
+    .custom-box {
+      margin-top: 14px;
+      display: grid;
+      gap: 7px;
+    }
+
+    .custom-box input {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid rgba(255,255,255,.22);
+      background: rgba(255,255,255,.97);
+      color: var(--text);
+      border-radius: var(--radius);
+      padding: 10px 13px;
+      outline: none;
+    }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 14px;
+    }
+
+    .sticky .action-row button {
+      border-color: rgba(255,255,255,.70);
+      color: white;
+    }
+
+    .sticky .action-row button:hover {
+      background: rgba(255,255,255,.09);
+    }
+
+    .sticky .action-row button.primary {
+      background: white;
+      color: var(--green-accent);
+      border-color: white;
+    }
+
+    .sticky .action-row button.primary:hover {
+      background: var(--cream);
+    }
+
+    .sticky .action-row button.good {
+      background: transparent;
+      color: white;
+      border-color: white;
+    }
+
+    .status {
+      min-height: 20px;
+      margin-top: 12px;
+      color: #bff5dc;
+      font-size: 13px;
+    }
+
+    .mini {
+      font-size: 12px;
+      line-height: 1.6;
+      margin-top: 10px;
+    }
+
+    .sticky .mini em {
+      color: white;
+      font-style: normal;
+      font-weight: 700;
+    }
+
+    footer {
+      margin-top: 40px;
+      padding: 28px 20px;
+      border-radius: var(--radius);
+      background: var(--green-house);
+      color: rgba(255,255,255,.70);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    ::selection {
+      background: var(--green-light);
+      color: var(--green-house);
+    }
+
+    @media (max-width: 1080px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sticky {
+        position: static;
+      }
+
+      textarea {
+        min-height: 360px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .wrap {
+        width: min(100% - 24px, 1440px);
+        padding-bottom: 32px;
+      }
+
+      header {
+        margin: 0 -12px 24px;
+        padding: 38px 20px;
+        min-height: auto;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .title-block h1 {
+        font-size: 38px;
+      }
+
+      .title-block p {
+        font-size: 15px;
+      }
+
+      .toolbar {
+        padding: 16px;
+      }
+
+      .toolbar-row {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      button,
+      select {
+        width: 100%;
+        min-height: 46px;
+      }
+
+      .panel-head {
+        padding: 16px;
+      }
+
+      .panel-body {
+        padding: 16px;
+      }
+
+      .output-options {
+        grid-template-columns: 1fr;
+      }
+
+      .action-row {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .chips {
+        gap: 7px;
+      }
+
+      .chip span {
+        min-height: 36px;
+        font-size: 12px;
+      }
+    }
+  </style>
+
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title-block">
+        <h1>VLEO 프롬프트 생성기</h1>
+        <p>
+          VLEO(Very Low Earth Orbit) 우주체 이미지를 위한 키워드를 선택해
+          이미지 생성용 영문 프롬프트를 자동으로 조립합니다.
+          모든 기능은 브라우저 안에서만 동작합니다.
+        </p>
+      </div>
+      <div class="badge">HTML + 자바스크립트</div>
+    </header>
+
+    <section class="toolbar">
+      <div class="toolbar-row">
+        <strong>프리셋</strong>
+        <select id="preset">
+          <option value="">직접 선택</option>
+          <option value="recommended">추천 기본형</option>
+          <option value="isr">감시정찰</option>
+          <option value="earth">초고해상도 지구관측</option>
+          <option value="maritime">해양 감시</option>
+          <option value="network">위성군 네트워크</option>
+          <option value="future">미래형 VLEO 플랫폼</option>
+        </select>
+        <button class="primary" id="applyPreset">프리셋 적용</button>
+        <button id="openAll">모든 항목 펼치기</button>
+        <button id="closeAll">모든 항목 접기</button>
+        <button class="danger" id="resetAll">전체 초기화</button>
+      </div>
+      <div class="hint">
+        키워드는 여러 개 선택할 수 있습니다. 선택 즉시 오른쪽 프롬프트가 갱신됩니다.
+        프리셋 적용 후 세부 키워드를 추가·제거해 원하는 이미지를 조정하세요.
+      </div>
+    </section>
+
+    <div class="layout">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>키워드 선택</h2>
+          <span id="totalSelected" class="section-count">0개 선택</span>
+        </div>
+        <div class="panel-body">
+          <div id="sections" class="sections"></div>
+        </div>
+      </section>
+
+      <aside class="panel sticky">
+        <div class="panel-head">
+          <h2>생성 프롬프트</h2>
+          <span id="charCount" class="section-count">0자</span>
+        </div>
+        <div class="panel-body">
+          <div class="output-options">
+            <div class="field">
+              <label for="format">출력 형식</label>
+              <select id="format">
+                <option value="paragraph">자연어 문단형</option>
+                <option value="structured">구조 구분형</option>
+                <option value="compact">간결 키워드형</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="separator">키워드 구분</label>
+              <select id="separator">
+                <option value=", ">, 쉼표</option>
+                <option value="; ">; 세미콜론</option>
+                <option value=" | ">| 구분선</option>
+              </select>
+            </div>
+          </div>
+
+          <textarea id="output" spellcheck="false" placeholder="키워드를 선택하면 프롬프트가 생성됩니다."></textarea>
+
+          <div class="custom-box">
+            <label class="mini" for="customText">추가 지시사항</label>
+            <input id="customText" type="text" placeholder="예: 화면 중앙 배치, 아래쪽에 한반도 표현, 무기 노출 없음" />
+          </div>
+
+          <div class="action-row">
+            <button class="primary" id="copyPrompt">프롬프트 복사</button>
+            <button class="good" id="downloadPrompt">텍스트 파일 저장</button>
+            <button id="selectRecommended">추천 키워드만 선택</button>
+          </div>
+
+          <div id="status" class="status"></div>
+          <div class="mini">
+            팁: 일반 위성처럼 보이면 기체 형상과 제외 키워드에서
+            <em>저항 최소화 형상</em>, <em>일체형 비행체 구조</em>,
+            <em>기존 박스형 위성 형태 제외</em> 등을 강화하세요.
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <footer>
+      VLEO 프롬프트 생성기 · 브라우저 단독 실행
+    </footer>
+  </div>
+
+<script>
+const DATA = [
+  {
+    id: "subject",
+    title: "1. 주 피사체",
+    groups: {
+      "기본": [
+        "VLEO 비행체",
+        "초저궤도 비행체",
+        "지구관측 비행체",
+        "차세대 위성",
+        "궤도 비행체"
+      ],
+      "감시정찰": [
+        "ISR 비행체",
+        "정보·감시·정찰 비행체",
+        "정찰 비행체",
+        "지속감시 플랫폼",
+        "군용 지구관측 비행체"
+      ],
+      "미래형": [
+        "차세대 VLEO 궤도 비행체",
+        "첨단 자율 비행체",
+        "미래형 궤도 비행체",
+        "VLEO 전용 비행체",
+        "무인 궤도 감시 플랫폼"
+      ]
+    }
+  },
+  {
+    id: "environment",
+    title: "2. VLEO 환경",
+    groups: {
+      "고도": [
+        "고도 250 km",
+        "고도 300 km",
+        "고도 250–350 km",
+        "지구 상공 수백 km의 초저고도",
+        "극저고도 궤도"
+      ],
+      "대기": [
+        "잔류 상층대기",
+        "희박 대기",
+        "상부 열권",
+        "매우 얇은 대기층",
+        "저밀도 대기 입자"
+      ],
+      "속도": [
+        "고속 궤도 비행",
+        "극고속 궤도 속도",
+        "강한 전진 속도감",
+        "궤도 비행 속도감",
+        "고속 저고도 궤도 비행"
+      ]
+    }
+  },
+  {
+    id: "shape",
+    title: "3. 미래형 VLEO 기체 형상",
+    groups: {
+      "저항 최소화": [
+        "저항 최소화 형상",
+        "매우 작은 전면 단면적",
+        "가늘고 길게 늘어난 기체 형상",
+        "유선형 궤도 비행체",
+        "공기역학 최적화 비행체"
+      ],
+      "통합형 기체": [
+        "일체형 비행체 구조",
+        "통합형 비행체 구조",
+        "매끄러운 블렌디드 동체",
+        "블렌디드 바디 설계",
+        "이음새가 최소화된 구조 표면"
+      ],
+      "미래형": [
+        "다면형 항공우주 형상",
+        "각진 전방 표면",
+        "스텔스 기반 형상",
+        "첨단 궤도 비행체 형상",
+        "차세대 항공우주 구조"
+      ],
+      "외부 돌출물 최소화": [
+        "외부 돌출물 최소화",
+        "매립형 센서",
+        "기체 밀착형 태양전지 배열",
+        "통합형 안테나",
+        "소형 추진 모듈"
+      ]
+    }
+  },
+  {
+    id: "materials",
+    title: "4. 재질",
+    groups: {
+      "구조재": [
+        "티타늄 구조",
+        "탄소섬유 복합재",
+        "탄소-탄소 복합재",
+        "세라믹 복합재",
+        "첨단 항공우주 합금",
+        "경량 복합재 구조"
+      ],
+      "표면": [
+        "짙은 흑연 표면",
+        "무광 금속 표면",
+        "흑연색 블랙 코팅",
+        "티타늄 회색 표면",
+        "저반사 코팅"
+      ],
+      "VLEO 대응": [
+        "원자산소 내성 코팅",
+        "침식 저항 표면",
+        "열보호 코팅",
+        "고온 내열 소재",
+        "보호용 세라믹 층"
+      ],
+      "시각적 디테일": [
+        "적층형 표면 패널",
+        "미세한 패널 이음선",
+        "정밀 가공 항공우주 표면",
+        "열보호 타일",
+        "다층 구조 외피"
+      ]
+    }
+  },
+  {
+    id: "propulsion",
+    title: "5. 추진계",
+    groups: {
+      "기본 전기추진": [
+        "전기추진",
+        "이온 추진",
+        "이온 추력기",
+        "홀 효과 추력기",
+        "저추력 전기추진"
+      ],
+      "미래형 VLEO": [
+        "공기흡입식 전기추진",
+        "대기흡입식 전기추진",
+        "ABEP 시스템",
+        "통합형 전기추진",
+        "첨단 VLEO 추진계"
+      ],
+      "기능": [
+        "지속적인 항력 보상",
+        "궤도 유지",
+        "지속 저추력 운용",
+        "항력 상쇄 추진",
+        "고도 유지"
+      ],
+      "이미지 표현": [
+        "희미한 이온 배기",
+        "은은한 청색 이온 플룸",
+        "거의 보이지 않는 전기추진 플룸"
+      ]
+    }
+  },
+  {
+    id: "sensors",
+    title: "6. 센서 / 탑재체",
+    groups: {
+      "광학": [
+        "고해상도 광학망원경",
+        "대구경 광학 개구부",
+        "전자광학 센서",
+        "EO 영상 시스템",
+        "정밀 광학 탑재체"
+      ],
+      "적외선": [
+        "적외선 센서",
+        "EO/IR 센서",
+        "열영상 탑재체",
+        "다중대역 적외선 센서"
+      ],
+      "SAR": [
+        "합성개구레이더",
+        "SAR 탑재체",
+        "기체 밀착형 SAR 안테나",
+        "측면 관측 레이더 배열"
+      ],
+      "다중/초분광": [
+        "다중분광 영상 센서",
+        "초분광 센서",
+        "분광 영상 탑재체"
+      ],
+      "형상": [
+        "매립형 센서",
+        "통합형 센서 개구부",
+        "기체 하부 관측 개구부",
+        "내장형 광학망원경"
+      ]
+    }
+  },
+  {
+    id: "mission",
+    title: "7. 임무",
+    groups: {
+      "감시·정찰": [
+        "지속감시",
+        "전략정찰",
+        "실시간 정찰",
+        "지속 지구관측",
+        "고해상도 감시"
+      ],
+      "표적 관측": [
+        "표적 추적",
+        "다중표적 관측",
+        "이동표적 감시",
+        "지속 표적 관측"
+      ],
+      "해양": [
+        "해양 감시",
+        "선박 추적",
+        "해상 활동 감시",
+        "연안 감시"
+      ],
+      "지상": [
+        "국경 감시",
+        "핵심 기반시설 감시",
+        "광역 지상 감시",
+        "도시지역 감시"
+      ],
+      "VLEO 장점 강조": [
+        "초고해상도 지구관측",
+        "신속 재방문 능력",
+        "저지연 정보수집",
+        "지속 고해상도 영상획득"
+      ]
+    }
+  },
+  {
+    id: "network",
+    title: "8. 위성 간 네트워크",
+    groups: {
+      "통신": [
+        "레이저 교차링크",
+        "위성 간 광통신 링크",
+        "위성 간 통신",
+        "고대역폭 광통신",
+        "우주체 간 레이저 링크"
+      ],
+      "구조": [
+        "분산형 위성 네트워크",
+        "궤도 메시 네트워크",
+        "상호연결 위성군",
+        "네트워크형 비행체",
+        "분산형 센싱 구조"
+      ],
+      "편대": [
+        "편대 비행",
+        "협조형 궤도 편대",
+        "협동 비행체 편대",
+        "분산형 궤도 편대"
+      ],
+      "데이터": [
+        "실시간 데이터 중계",
+        "센서 데이터 공유",
+        "분산형 정보 네트워크",
+        "협동 표적 추적"
+      ]
+    }
+  },
+  {
+    id: "earth",
+    title: "9. 지구 / 대기",
+    groups: {
+      "지구": [
+        "고세부 지구 표현",
+        "보이는 지구 곡률",
+        "화면 대부분을 채우는 지구",
+        "정밀 지형 표현",
+        "산맥",
+        "해안선",
+        "해양",
+        "대도시 지역",
+        "도시 불빛",
+        "구름 분포"
+      ],
+      "대기층": [
+        "얇은 청색 대기 가장자리",
+        "매우 얇은 청색 대기층",
+        "대기권 수평선",
+        "상층대기 발광",
+        "은은한 대기 산란"
+      ],
+      "VLEO 상호작용": [
+        "희미한 입자 상호작용",
+        "은은한 잔류대기 상호작용",
+        "희미한 공력 발광",
+        "희박대기 흐름",
+        "전방 가장자리 주변의 미세 입자 흐름"
+      ],
+      "재진입 방지": [
+        "과학적으로 타당한 표현",
+        "은은한 대기 상호작용",
+        "대기권 재진입 장면 아님"
+      ]
+    }
+  },
+  {
+    id: "camera",
+    title: "10. 카메라 / 구도",
+    groups: {
+      "3/4뷰": [
+        "3/4 시점",
+        "전방 3/4 시점",
+        "후방 3/4 시점"
+      ],
+      "추적": [
+        "궤도 추적 촬영",
+        "역동적 추적 카메라",
+        "영화적 추적 시점"
+      ],
+      "위에서": [
+        "비행체보다 약간 위쪽 시점",
+        "고각도 궤도 시점",
+        "상부 3/4 시점"
+      ],
+      "아래에서": [
+        "저각도 시점",
+        "지구 방향 기체 하부 시점",
+        "비행체 후하방 카메라 시점"
+      ],
+      "광각": [
+        "광각 궤도 촬영",
+        "초광각 궤도 시점",
+        "광활한 영화적 구도"
+      ],
+      "화면 배치": [
+        "전경을 지배하는 비행체",
+        "배경 대부분을 채우는 지구",
+        "원거리 배경의 보조 비행체",
+        "화면을 가로지르는 대각선 비행 경로"
+      ]
+    }
+  },
+  {
+    id: "lighting",
+    title: "11. 조명",
+    groups: {
+      "태양": [
+        "궤도 일출",
+        "궤도 일몰",
+        "낮은 각도의 태양광",
+        "직접 태양광 조명"
+      ],
+      "림라이트": [
+        "강한 림라이트",
+        "은은한 림라이트",
+        "태양광이 비친 비행체 가장자리"
+      ],
+      "사실적 조명": [
+        "물리적으로 정확한 태양광",
+        "사실적인 우주 조명",
+        "지구 반사광",
+        "자연스러운 태양광 반사"
+      ],
+      "영화적 연출": [
+        "영화적 역광",
+        "극적인 수평선 조명",
+        "볼류메트릭 대기 산란",
+        "깊고 자연스러운 그림자"
+      ]
+    }
+  },
+  {
+    id: "rendering",
+    title: "12. 사실성 / 렌더링",
+    groups: {
+      "현실성": [
+        "사진처럼 사실적인",
+        "초사실적",
+        "극사실적 항공우주 사진 스타일"
+      ],
+      "기술적 사실성": [
+        "과학적으로 타당한 표현",
+        "기술적으로 설득력 있는",
+        "사실적인 항공우주 공학 표현",
+        "사실적인 비행체 구조",
+        "공학 수준의 사실성"
+      ],
+      "렌더링": [
+        "물리 기반 렌더링",
+        "PBR 재질",
+        "사실적인 재질 반응",
+        "물리적으로 정확한 반사"
+      ],
+      "디테일": [
+        "8K 수준 디테일",
+        "초고세부 묘사",
+        "정밀 항공우주 표면 디테일",
+        "정밀 기계 디테일"
+      ],
+      "시대감": [
+        "근미래 항공우주 기술",
+        "2035–2045년대 항공우주 기술",
+        "현실성 있는 차세대 비행체",
+        "10–20년 후 미래 기술"
+      ]
+    }
+  },
+  {
+    id: "negative",
+    title: "13. 제외 키워드",
+    groups: {
+      "글자/UI": [
+        "텍스트 없음",
+        "라벨 없음",
+        "캡션 없음",
+        "HUD 없음",
+        "인터페이스 그래픽 없음",
+        "인포그래픽 요소 없음",
+        "워터마크 없음",
+        "로고 없음"
+      ],
+      "사람·시설": [
+        "우주비행사 없음",
+        "인간 운용자 없음",
+        "통제실 없음",
+        "모니터 화면 없음"
+      ],
+      "구형 위성 형태": [
+        "기존 박스형 위성 형태 제외",
+        "과도하게 큰 태양전지판 제외",
+        "대형 접시형 안테나 제외",
+        "노출형 위성 버스 구조 제외"
+      ],
+      "과도한 SF": [
+        "판타지 요소 제외",
+        "외계 기술 표현 제외",
+        "과도한 SF 디자인 제외",
+        "네온 스타일 비행체 제외",
+        "비현실적 에너지 빔 제외"
+      ],
+      "재진입 방지": [
+        "화염 없음",
+        "화염 궤적 없음",
+        "강한 플라즈마 없음",
+        "재진입 플라즈마 없음",
+        "운석형 궤적 없음",
+        "대기권 재진입 장면 아님"
+      ],
+      "군사 이미지 과장 방지": [
+        "노출된 무기 없음",
+        "미사일 없음",
+        "무기 발사 없음",
+        "폭발 없음"
+      ]
+    }
+  }
+];
+
+const RECOMMENDED = [
+  "차세대 VLEO 궤도 비행체",
+  "고도 300 km",
+  "희박 대기",
+  "고속 궤도 비행",
+  "저항 최소화 형상",
+  "매우 작은 전면 단면적",
+  "매끄러운 블렌디드 동체",
+  "다면형 항공우주 형상",
+  "외부 돌출물 최소화",
+  "짙은 흑연 표면",
+  "원자산소 내성 코팅",
+  "공기흡입식 전기추진",
+  "지속적인 항력 보상",
+  "대구경 광학 개구부",
+  "EO/IR 센서",
+  "매립형 센서",
+  "초고해상도 지구관측",
+  "지속 고해상도 영상획득",
+  "레이저 교차링크",
+  "협조형 궤도 편대",
+  "보이는 지구 곡률",
+  "화면 대부분을 채우는 지구",
+  "얇은 청색 대기 가장자리",
+  "은은한 잔류대기 상호작용",
+  "3/4 시점",
+  "궤도 추적 촬영",
+  "전경을 지배하는 비행체",
+  "궤도 일출",
+  "물리적으로 정확한 태양광",
+  "볼류메트릭 대기 산란",
+  "초사실적",
+  "과학적으로 타당한 표현",
+  "사실적인 항공우주 공학 표현",
+  "물리 기반 렌더링",
+  "근미래 항공우주 기술",
+  "8K 수준 디테일",
+  "텍스트 없음",
+  "라벨 없음",
+  "HUD 없음",
+  "로고 없음",
+  "기존 박스형 위성 형태 제외",
+  "판타지 요소 제외",
+  "강한 플라즈마 없음",
+  "화염 없음",
+  "대기권 재진입 장면 아님"
+];
+
+const PRESETS = {
+  recommended: RECOMMENDED,
+  isr: [
+    "정보·감시·정찰 비행체",
+    "고도 300 km",
+    "희박 대기",
+    "고속 궤도 비행",
+    "저항 최소화 형상",
+    "가늘고 길게 늘어난 기체 형상",
+    "일체형 비행체 구조",
+    "다면형 항공우주 형상",
+    "짙은 흑연 표면",
+    "원자산소 내성 코팅",
+    "공기흡입식 전기추진",
+    "지속적인 항력 보상",
+    "고해상도 광학망원경",
+    "EO/IR 센서",
+    "매립형 센서",
+    "지속감시",
+    "실시간 정찰",
+    "표적 추적",
+    "지속 고해상도 영상획득",
+    "레이저 교차링크",
+    "센서 데이터 공유",
+    "화면 대부분을 채우는 지구",
+    "얇은 청색 대기 가장자리",
+    "은은한 잔류대기 상호작용",
+    "궤도 추적 촬영",
+    "전경을 지배하는 비행체",
+    "궤도 일출",
+    "물리적으로 정확한 태양광",
+    "초사실적",
+    "사실적인 항공우주 공학 표현",
+    "물리 기반 렌더링",
+    "텍스트 없음",
+    "HUD 없음",
+    "기존 박스형 위성 형태 제외",
+    "노출된 무기 없음",
+    "강한 플라즈마 없음"
+  ],
+  earth: [
+    "지구관측 비행체",
+    "고도 300 km",
+    "극저고도 궤도",
+    "희박 대기",
+    "가늘고 길게 늘어난 기체 형상",
+    "매끄러운 블렌디드 동체",
+    "외부 돌출물 최소화",
+    "원자산소 내성 코팅",
+    "통합형 전기추진",
+    "대구경 광학 개구부",
+    "전자광학 센서",
+    "다중분광 영상 센서",
+    "통합형 센서 개구부",
+    "지속 지구관측",
+    "초고해상도 지구관측",
+    "신속 재방문 능력",
+    "고세부 지구 표현",
+    "보이는 지구 곡률",
+    "화면 대부분을 채우는 지구",
+    "해안선",
+    "대도시 지역",
+    "구름 분포",
+    "얇은 청색 대기 가장자리",
+    "광각 궤도 촬영",
+    "비행체보다 약간 위쪽 시점",
+    "궤도 일출",
+    "지구 반사광",
+    "초사실적",
+    "과학적으로 타당한 표현",
+    "8K 수준 디테일",
+    "텍스트 없음",
+    "라벨 없음",
+    "HUD 없음",
+    "기존 박스형 위성 형태 제외",
+    "강한 플라즈마 없음"
+  ],
+  maritime: [
+    "ISR 비행체",
+    "고도 300 km",
+    "고속 궤도 비행",
+    "저항 최소화 형상",
+    "유선형 궤도 비행체",
+    "기체 밀착형 태양전지 배열",
+    "짙은 흑연 표면",
+    "공기흡입식 전기추진",
+    "EO/IR 센서",
+    "합성개구레이더",
+    "기체 밀착형 SAR 안테나",
+    "해양 감시",
+    "선박 추적",
+    "해상 활동 감시",
+    "연안 감시",
+    "저지연 정보수집",
+    "레이저 교차링크",
+    "실시간 데이터 중계",
+    "해양",
+    "해안선",
+    "얇은 청색 대기 가장자리",
+    "비행체 후하방 카메라 시점",
+    "광각 궤도 촬영",
+    "물리적으로 정확한 태양광",
+    "사진처럼 사실적인",
+    "기술적으로 설득력 있는",
+    "텍스트 없음",
+    "HUD 없음",
+    "노출된 무기 없음",
+    "화염 없음"
+  ],
+  network: [
+    "차세대 VLEO 궤도 비행체",
+    "고도 250–350 km",
+    "고속 궤도 비행",
+    "저항 최소화 형상",
+    "통합형 비행체 구조",
+    "외부 돌출물 최소화",
+    "통합형 전기추진",
+    "레이저 교차링크",
+    "위성 간 광통신 링크",
+    "분산형 위성 네트워크",
+    "궤도 메시 네트워크",
+    "상호연결 위성군",
+    "네트워크형 비행체",
+    "편대 비행",
+    "협조형 궤도 편대",
+    "실시간 데이터 중계",
+    "센서 데이터 공유",
+    "분산형 정보 네트워크",
+    "원거리 배경의 보조 비행체",
+    "배경 대부분을 채우는 지구",
+    "얇은 청색 대기 가장자리",
+    "광활한 영화적 구도",
+    "영화적 역광",
+    "볼류메트릭 대기 산란",
+    "초사실적",
+    "사실적인 비행체 구조",
+    "8K 수준 디테일",
+    "텍스트 없음",
+    "라벨 없음",
+    "비현실적 에너지 빔 제외",
+    "대형 접시형 안테나 제외"
+  ],
+  future: [
+    "첨단 자율 비행체",
+    "미래형 궤도 비행체",
+    "고도 250–350 km",
+    "희박 대기",
+    "극고속 궤도 속도",
+    "매우 작은 전면 단면적",
+    "일체형 비행체 구조",
+    "블렌디드 바디 설계",
+    "다면형 항공우주 형상",
+    "각진 전방 표면",
+    "첨단 궤도 비행체 형상",
+    "외부 돌출물 최소화",
+    "기체 밀착형 태양전지 배열",
+    "통합형 안테나",
+    "탄소-탄소 복합재",
+    "첨단 항공우주 합금",
+    "흑연색 블랙 코팅",
+    "원자산소 내성 코팅",
+    "정밀 가공 항공우주 표면",
+    "공기흡입식 전기추진",
+    "지속적인 항력 보상",
+    "거의 보이지 않는 전기추진 플룸",
+    "매립형 센서",
+    "통합형 센서 개구부",
+    "신속 재방문 능력",
+    "얇은 청색 대기 가장자리",
+    "희미한 입자 상호작용",
+    "영화적 추적 시점",
+    "화면을 가로지르는 대각선 비행 경로",
+    "극적인 수평선 조명",
+    "초사실적",
+    "공학 수준의 사실성",
+    "물리 기반 렌더링",
+    "2035–2045년대 항공우주 기술",
+    "8K 수준 디테일",
+    "기존 박스형 위성 형태 제외",
+    "과도하게 큰 태양전지판 제외",
+    "외계 기술 표현 제외",
+    "과도한 SF 디자인 제외",
+    "네온 스타일 비행체 제외",
+    "강한 플라즈마 없음"
+  ]
+};
+
+const sectionContainer = document.getElementById("sections");
+const output = document.getElementById("output");
+const totalSelected = document.getElementById("totalSelected");
+const charCount = document.getElementById("charCount");
+const formatSelect = document.getElementById("format");
+const separatorSelect = document.getElementById("separator");
+const customText = document.getElementById("customText");
+const statusEl = document.getElementById("status");
+
+function slugify(text) {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function renderSections() {
+  sectionContainer.innerHTML = "";
+  DATA.forEach((section, idx) => {
+    const details = document.createElement("details");
+    details.className = "section";
+    details.dataset.section = section.id;
+    if (idx < 4) details.open = true;
+
+    const summary = document.createElement("summary");
+    summary.innerHTML = `<span>${section.title}</span><span class="section-count" id="count-${section.id}">0</span>`;
+    details.appendChild(summary);
+
+    const groups = document.createElement("div");
+    groups.className = "groups";
+
+    Object.entries(section.groups).forEach(([groupTitle, keywords]) => {
+      const group = document.createElement("div");
+      group.className = "group";
+
+      const title = document.createElement("div");
+      title.className = "group-title";
+      title.textContent = groupTitle;
+      group.appendChild(title);
+
+      const chips = document.createElement("div");
+      chips.className = "chips";
+
+      keywords.forEach((keyword, keyIndex) => {
+        const id = `${section.id}-${slugify(groupTitle)}-${keyIndex}`;
+        const label = document.createElement("label");
+        label.className = "chip";
+        label.innerHTML = `
+          <input type="checkbox" id="${id}" data-section="${section.id}" data-keyword="${escapeHtml(keyword)}">
+          <span>${escapeHtml(keyword)}</span>
+        `;
+        chips.appendChild(label);
+      });
+
+      group.appendChild(chips);
+      groups.appendChild(group);
+    });
+
+    details.appendChild(groups);
+    sectionContainer.appendChild(details);
+  });
+
+  sectionContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener("change", generatePrompt);
+  });
+}
+
+function escapeHtml(str) {
+  return str
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function getSelectedBySection() {
+  const map = {};
+  DATA.forEach(s => map[s.id] = []);
+  document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+    map[cb.dataset.section].push(cb.dataset.keyword);
+  });
+  return map;
+}
+
+function unique(arr) {
+  return [...new Set(arr)];
+}
+
+function makeSentence(label, items) {
+  if (!items.length) return "";
+  const sep = separatorSelect.value;
+  return `${label}: ${unique(items).join(sep)}.`;
+}
+
+function generatePrompt() {
+  const selected = getSelectedBySection();
+  const fmt = formatSelect.value;
+  const sep = separatorSelect.value;
+  const custom = customText.value.trim();
+  let text = "";
+
+  if (fmt === "structured") {
+    const lines = [];
+    DATA.forEach(section => {
+      const items = unique(selected[section.id]);
+      if (items.length) {
+        lines.push(`[${section.title.replace(/^\d+\.\s*/, "")}]`);
+        lines.push(items.join(sep));
+        lines.push("");
+      }
+    });
+    if (custom) {
+      lines.push("[추가 지시사항]");
+      lines.push(custom);
+    }
+    text = lines.join("\n").trim();
+  }
+
+  if (fmt === "compact") {
+    const positives = [];
+    const negatives = [];
+    DATA.forEach(section => {
+      const items = unique(selected[section.id]);
+      if (section.id === "negative") negatives.push(...items);
+      else positives.push(...items);
+    });
+    text = unique(positives).join(sep);
+    if (custom) text += (text ? sep : "") + custom;
+    if (negatives.length) {
+      text += `\n\n제외 프롬프트: ${unique(negatives).join(sep)}`;
+    }
+    text = text.trim();
+  }
+
+  if (fmt === "paragraph") {
+    const p = [];
+    const subject = selected.subject;
+    const environment = selected.environment;
+    const shape = selected.shape;
+    const materials = selected.materials;
+    const propulsion = selected.propulsion;
+    const sensors = selected.sensors;
+    const mission = selected.mission;
+    const network = selected.network;
+    const earth = selected.earth;
+    const camera = selected.camera;
+    const lighting = selected.lighting;
+    const rendering = selected.rendering;
+    const negative = selected.negative;
+
+    if (subject.length) {
+      p.push(`매우 사실적인 이미지를 생성합니다. 주 피사체: ${unique(subject).join(", ")}.`);
+    } else {
+      p.push("매우 사실적인 VLEO 항공우주 이미지를 생성합니다.");
+    }
+
+    const sentencePairs = [
+      ["궤도 환경", environment],
+      ["우주체 설계", shape],
+      ["재질 및 표면 처리", materials],
+      ["추진", propulsion],
+      ["센서 및 탑재체", sensors],
+      ["임무", mission],
+      ["우주체 네트워크", network],
+      ["지구 및 대기 환경", earth],
+      ["카메라 및 구도", camera],
+      ["조명", lighting],
+      ["렌더링 스타일", rendering]
+    ];
+
+    sentencePairs.forEach(([label, items]) => {
+      const s = makeSentence(label, items);
+      if (s) p.push(s);
+    });
+
+    if (custom) p.push(`추가 지시사항: ${custom}.`);
+    if (negative.length) p.push(`제외 요소: ${unique(negative).join(", ")}.`);
+
+    text = p.join("\n\n");
+  }
+
+  output.value = text;
+  updateCounts();
+}
+
+function updateCounts() {
+  let total = 0;
+  DATA.forEach(section => {
+    const count = document.querySelectorAll(`input[data-section="${section.id}"]:checked`).length;
+    total += count;
+    const badge = document.getElementById(`count-${section.id}`);
+    if (badge) badge.textContent = count;
+  });
+  totalSelected.textContent = `${total}개 선택`;
+  charCount.textContent = `${output.value.length}자`;
+}
+
+function clearAll() {
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+  customText.value = "";
+  generatePrompt();
+}
+
+function applyKeywords(keywords) {
+  clearAll();
+  const set = new Set(keywords);
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    if (set.has(cb.dataset.keyword)) cb.checked = true;
+  });
+  generatePrompt();
+}
+
+document.getElementById("applyPreset").addEventListener("click", () => {
+  const key = document.getElementById("preset").value;
+  if (!key || !PRESETS[key]) {
+    showStatus("프리셋을 선택하세요.", true);
+    return;
+  }
+  applyKeywords(PRESETS[key]);
+  showStatus("프리셋을 적용했습니다.");
+});
+
+document.getElementById("selectRecommended").addEventListener("click", () => {
+  applyKeywords(RECOMMENDED);
+  document.getElementById("preset").value = "recommended";
+  showStatus("추천 키워드를 선택했습니다.");
+});
+
+document.getElementById("resetAll").addEventListener("click", () => {
+  clearAll();
+  document.getElementById("preset").value = "";
+  showStatus("모든 선택을 초기화했습니다.");
+});
+
+document.getElementById("openAll").addEventListener("click", () => {
+  document.querySelectorAll("details.section").forEach(el => el.open = true);
+});
+
+document.getElementById("closeAll").addEventListener("click", () => {
+  document.querySelectorAll("details.section").forEach(el => el.open = false);
+});
+
+formatSelect.addEventListener("change", generatePrompt);
+separatorSelect.addEventListener("change", generatePrompt);
+customText.addEventListener("input", generatePrompt);
+
+output.addEventListener("input", () => {
+  charCount.textContent = `${output.value.length}자`;
+});
+
+document.getElementById("copyPrompt").addEventListener("click", async () => {
+  if (!output.value.trim()) {
+    showStatus("복사할 프롬프트가 없습니다.", true);
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(output.value);
+    showStatus("프롬프트를 클립보드에 복사했습니다.");
+  } catch (e) {
+    output.select();
+    document.execCommand("copy");
+    showStatus("프롬프트를 복사했습니다.");
+  }
+});
+
+document.getElementById("downloadPrompt").addEventListener("click", () => {
+  if (!output.value.trim()) {
+    showStatus("저장할 프롬프트가 없습니다.", true);
+    return;
+  }
+  const blob = new Blob([output.value], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "VLEO_generated_prompt.txt";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showStatus("TXT 파일로 저장했습니다.");
+});
+
+function showStatus(message, isError = false) {
+  statusEl.textContent = message;
+  statusEl.style.color = isError ? "var(--danger)" : "var(--success)";
+  clearTimeout(showStatus.timer);
+  showStatus.timer = setTimeout(() => statusEl.textContent = "", 2600);
+}
+
+renderSections();
+applyKeywords(RECOMMENDED);
+document.getElementById("preset").value = "recommended";
+</script>
+</body>
+</html>
